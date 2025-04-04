@@ -1,0 +1,5 @@
+# Python dependencies
+flask
+flask-cors
+opencv-python
+Pillow
