@@ -6,6 +6,12 @@ import io
 import cv2
 import base64
 from PIL import Image
+import traceback
+
+import sys
+sys.path.append("D:\PROGRAMMING\React Js\DIP\human-anime-app")
+
+from app2 import base64_to_anime  # Assuming this function is defined in app.py
 
 app = Flask(__name__)
 CORS(app)
@@ -22,19 +28,26 @@ def predict_image():
     try:
         data = request.json
         base64_img = data.get("image")
+        # print("base64_img: ", base64_img[:100], sep="\n")
         if not base64_img:
             return jsonify({"error": "No image provided"}), 400
+        
+        encoded_img = base64_to_anime(base64_img)
 
-        image_data = base64.b64decode(base64_img.split(",")[1])
-        image = Image.open(io.BytesIO(image_data)).convert("RGB")
-        image = image.convert("L")  # Convert to grayscale
+        # image_data = base64.b64decode(base64_img.split(",")[1])
+        # image = Image.open(io.BytesIO(image_data)).convert("RGB")
+        # image = image.convert("L")  # Convert to grayscale
 
-        buffer = io.BytesIO()
-        image.save(buffer, format="PNG")
-        encoded_img = base64.b64encode(buffer.getvalue()).decode("utf-8")
+        # buffer = io.BytesIO()
+        # image.save(buffer, format="PNG")
+        # encoded_img = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+        # print({ "result_image": f"data:image/png;base64,{encoded_img}" })
         return jsonify({ "result_image": f"data:image/png;base64,{encoded_img}" })
 
     except Exception as e:
+        # print(f"Error processing image: {e}")
+        print("traceback:", traceback.format_exc())
         return jsonify({ "error": str(e) }), 500
 
 
@@ -103,5 +116,89 @@ def stream_video(filename):
         return jsonify({ "error": str(e) }), 500
 
 
+
+
+# --------------------------- Yatrik------------------------------------
+
+
+# import os
+# import cv2
+# import base64
+# import numpy as np
+# import onnxruntime as ort
+# from io import BytesIO
+# from deploy.test_by_onnx import process_image  # Assuming this function is implemented
+
+
+# # Model configuration
+# model_path = r"D:\\PROGRAMMING\\React Js\\DIP\\human-anime-app\\deploy\\AnimeGANv3_Hayao_STYLE_36.onnx"
+# device = "gpu"  # or "cpu"
+
+# def base64_to_cv2(base64_str):
+#     print("entered base64_to_cv2")
+#     img_bytes = base64.b64decode(base64_str)
+#     print("img_bytes:", type(img_bytes), len(img_bytes))
+#     img_array = np.frombuffer(img_bytes, dtype=np.uint8)
+#     print(img_array.shape)
+#     img_array = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+#     return cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+
+# def cv2_to_base64(cv2_img):
+#     _, buffer = cv2.imencode('.jpg', cv2_img)
+#     return base64.b64encode(buffer).decode('utf-8')
+
+# def Convert_single_image_from_cv2(cv2_img, model_path, device="cpu"):
+#     if ort.get_device() == 'GPU' and device == "gpu":
+#         session = ort.InferenceSession(model_path, providers=['CUDAExecutionProvider','CPUExecutionProvider'])
+#     else:
+#         session = ort.InferenceSession(model_path, providers=['CPUExecutionProvider'])
+
+#     input_name = session.get_inputs()[0].name
+
+#     original_shape = cv2_img.shape[:2][::-1]  # (width, height)
+#     img = process_image(cv2_img, model_path)
+#     img = np.expand_dims(img, axis=0)
+
+#     # Run inference
+#     output = session.run(None, {input_name: img})[0]
+
+#     # Convert output back to image
+#     output_img = (np.squeeze(output) + 1.) / 2 * 255
+#     output_img = np.clip(output_img, 0, 255).astype(np.uint8)
+#     output_img = cv2.resize(output_img, original_shape)
+#     output_img = cv2.cvtColor(output_img, cv2.COLOR_RGB2BGR)
+
+#     return output_img
+
+# # === Main callable ===
+# def base64_to_anime(base64_input_image):
+#     print("entered")
+
+#     input_img_cv2 = base64_to_cv2(base64_input_image)
+#     if input_img_cv2 is None:
+#         raise ValueError("Failed to decode base64 image to OpenCV format.")
+#     else:
+#         print("working input_img_cv2:", input_img_cv2.shape)
+
+#     print("input_img_cv2:", input_img_cv2.shape)
+    
+#     # Decode input base64 to cv2
+#     input_img_cv2 = base64_to_cv2(base64_input_image)
+#     print("input_img_cv2:", input_img_cv2.shape)
+    
+#     # Apply transformation using ONNX model
+#     output_img_cv2 = Convert_single_image_from_cv2(input_img_cv2, model_path, device)
+#     print("output_img_cv2:", output_img_cv2.shape)
+    
+#     # Convert back to base64
+#     output_base64 = cv2_to_base64(output_img_cv2)
+#     print("output_base64:", output_base64)
+
+#     with open("D:\PROGRAMMING\React Js\DIP\human-anime-app\output.jpg", "wb") as f:
+#         f.write(base64.b64decode(output_base64))
+        
+#     return output_base64
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
