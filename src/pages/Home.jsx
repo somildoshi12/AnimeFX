@@ -17,7 +17,7 @@ const Home = () => {
       <div className="max-w-3xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-2xl p-10 text-center">
         <h1 className="text-4xl md:text-5xl font-bold text-blue-400 mb-6">Welcome to Base64 Media Processor</h1>
         <p className="text-lg text-gray-300 leading-relaxed">
-          Upload images or videos to convert them to base64 and process them through AI.<br />
+          Upload images  to convert them to base64 and process them through AI.<br />
           Powered by modern React and styled with Tailwind CSS.
         </p>
       </div>

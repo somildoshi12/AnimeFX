@@ -160,6 +160,15 @@ def base64_to_anime(base64_input_image):
     
     return output_base64
 
+
+
+def image_to_anime(image):
+
+    output_img_cv2 = Convert_single_image_from_cv2(image, model_path, device)
+    
+    return output_img_cv2
+
+
 # === Example usage for testing ===
 if __name__ == "__main__":
     # Read image from disk for testing only

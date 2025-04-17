@@ -7,11 +7,11 @@ import cv2
 import base64
 from PIL import Image
 import traceback
-
 import sys
-sys.path.append("D:\PROGRAMMING\React Js\DIP\human-anime-app")
 
-from app2 import base64_to_anime  # Assuming this function is defined in app.py
+# Add your app path
+sys.path.append("D:\\PROGRAMMING\\React Js\\DIP\\human-anime-app")
+from app2 import base64_to_anime, image_to_anime  # Assuming these are correctly defined
 
 app = Flask(__name__)
 CORS(app)
@@ -28,82 +28,53 @@ def predict_image():
     try:
         data = request.json
         base64_img = data.get("image")
-        # print("base64_img: ", base64_img[:100], sep="\n")
+
         if not base64_img:
             return jsonify({"error": "No image provided"}), 400
-        
+
         encoded_img = base64_to_anime(base64_img)
-
-        # image_data = base64.b64decode(base64_img.split(",")[1])
-        # image = Image.open(io.BytesIO(image_data)).convert("RGB")
-        # image = image.convert("L")  # Convert to grayscale
-
-        # buffer = io.BytesIO()
-        # image.save(buffer, format="PNG")
-        # encoded_img = base64.b64encode(buffer.getvalue()).decode("utf-8")
-
-        # print({ "result_image": f"data:image/png;base64,{encoded_img}" })
-        return jsonify({ "result_image": f"data:image/png;base64,{encoded_img}" })
+        return jsonify({"result_image": f"data:image/png;base64,{encoded_img}"})
 
     except Exception as e:
-        # print(f"Error processing image: {e}")
         print("traceback:", traceback.format_exc())
-        return jsonify({ "error": str(e) }), 500
+        return jsonify({"error": str(e)}), 500
 
 
 # ========== Route for Video Processing ==========
 @app.route("/video-process", methods=["POST"])
 def process_video():
-    if 'video' not in request.files:
-        return jsonify({"error": "No video file provided"}), 400
-
-    video = request.files['video']
-    filename = secure_filename(video.filename)
-    input_path = os.path.join(UPLOAD_FOLDER, filename)
-    output_filename = f"processed_{filename}"
-    output_path = os.path.join(OUTPUT_FOLDER, output_filename)
-
-    # Save the uploaded video
-    video.save(input_path)
-
     try:
-        # Cleanup old processed videos
-        for f in os.listdir(OUTPUT_FOLDER):
-            if f.startswith("processed_"):
-                os.remove(os.path.join(OUTPUT_FOLDER, f))
+        print("video-process()")
+        if 'video' not in request.files:
+            return jsonify({"error": "No video file provided"}), 400
 
-        cap = cv2.VideoCapture(input_path)
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps = int(cap.get(cv2.CAP_PROP_FPS) or 15)
+        video = request.files['video']
+        filename = secure_filename(video.filename)
+        input_path = os.path.join(UPLOAD_FOLDER, filename)
+        output_filename = f"processed_{filename}"
+        output_path = os.path.join(OUTPUT_FOLDER, output_filename)
 
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+        # Save the uploaded video
+        video.save(input_path)
 
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            gray_3channel = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-            out.write(gray_3channel)
-
-        cap.release()
-        out.release()
+        process_video_with_anime_filter(input_path, output_path, base64_to_anime, target_fps=1)
 
         print(f"✅ Processed video saved at: {output_path}")
-        return jsonify({ "filename": output_filename })
+        return jsonify({"filename": output_filename})
 
     except Exception as e:
-        return jsonify({ "error": str(e) }), 500
+        print(f"🚫 Error processing video: {e}")
+        print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 
 
 # ========== Route to Stream Processed Video ==========
 @app.route("/video/<filename>")
 def stream_video(filename):
     try:
+        print("🚀 Serving video...")
         full_path = safe_join(OUTPUT_FOLDER, filename)
+
         if not os.path.isfile(full_path):
             print(f"⚠️ File not found: {full_path}")
             abort(404)
@@ -113,92 +84,116 @@ def stream_video(filename):
 
     except Exception as e:
         print(f"🚫 Error serving video: {e}")
-        return jsonify({ "error": str(e) }), 500
+        return jsonify({"error": str(e)}), 500
 
 
+# # ========== Anime Video Processing Function ==========
+# def process_video_with_anime_filter(input_path, output_path, base64_to_anime, target_fps=15, jpeg_quality=85):
+#     cap = cv2.VideoCapture(input_path)
+#     if not cap.isOpened():
+#         raise IOError(f"Cannot open video file at {input_path}")
+
+#     original_fps = cap.get(cv2.CAP_PROP_FPS)
+#     frame_interval = int(original_fps // target_fps) if original_fps > target_fps else 1
+
+#     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+#     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+#     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+#     out = cv2.VideoWriter(output_path, fourcc, target_fps, (width, height))
+
+#     frame_idx = 0
+#     while True:
+#         ret, frame = cap.read()
+#         if not ret:
+#             break
+
+#         if frame_idx % frame_interval == 0:
+#             print(f"Processed frame {frame_idx} of {cap.get(cv2.CAP_PROP_FRAME_COUNT) // frame_interval}")
+
+#                         # Apply anime transformation
+#             anime_frame = image_to_anime(frame)
+#             cv2.imwrite(os.path.join(OUTPUT_FOLDER, f"frame_{frame_idx}.jpg"), anime_frame, [int(cv2.IMWRITE_JPEG_QUALITY), jpeg_quality])
+
+#             # Ensure result is in the correct format
+#             if anime_frame.shape[1] != width or anime_frame.shape[0] != height:
+#                 anime_frame = cv2.resize(anime_frame, (width, height))
+
+#             out.write(anime_frame)
+
+#         frame_idx += 1
 
 
-# --------------------------- Yatrik------------------------------------
+#         #     # encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), jpeg_quality]
+#         #     # result, encimg = cv2.imencode('.jpg', frame, encode_param)
+#         #     if result:
+#         #         # compressed_frame = cv2.imdecode(encimg, cv2.IMREAD_COLOR)
+#         #         anime_frame = image_to_anime(frame)
+
+#         #         if anime_frame.shape[1] != width or anime_frame.shape[0] != height:
+#         #             anime_frame = cv2.resize(anime_frame, (width, height))
+
+#         #         out.write(anime_frame)
+
+#         # frame_idx += 1
+
+#     cap.release()
+#     out.release()
+#     print(f"Compressed anime video saved at {output_path}")
+
+def process_video_with_anime_filter(input_path, output_path, base64_to_anime, target_fps=15, jpeg_quality=85):
+    cap = cv2.VideoCapture(input_path)
+    if not cap.isOpened():
+        raise IOError(f"Cannot open video file at {input_path}")
+
+    original_fps = cap.get(cv2.CAP_PROP_FPS)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    frame_interval = int(original_fps // target_fps) if original_fps > target_fps else 1
+
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(output_path, fourcc, target_fps, (width, height))
+
+    frame_idx = 0
+    processed_frame_count = 0
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        # Skip frames to achieve target FPS
+        if frame_idx % frame_interval != 0:
+            frame_idx += 1
+            continue
+
+        print(f"🎬 Processing frame {processed_frame_count + 1} of ~{total_frames // frame_interval}")
+
+        # Apply anime transformation
+        anime_frame = image_to_anime(frame)
+
+        # Save each frame optionally as compressed image (optional, for debugging or audit)
+        frame_filename = os.path.join(OUTPUT_FOLDER, f"frame_{processed_frame_count}.jpg")
+        print(f"💾 Saving frame {processed_frame_count + 1} as {frame_filename}")
+        cv2.imwrite(frame_filename, anime_frame, [int(cv2.IMWRITE_JPEG_QUALITY), jpeg_quality])
+
+        # Ensure the processed frame has correct dimensions
+        if anime_frame.shape[:2] != (height, width):
+            anime_frame = cv2.resize(anime_frame, (width, height))
+
+        # Write frame to video
+        out.write(anime_frame)
+
+        frame_idx += 1
+        processed_frame_count += 1
+
+    cap.release()
+    out.release()
+    print(f"✅ Compressed anime video saved at: {output_path}")
 
 
-# import os
-# import cv2
-# import base64
-# import numpy as np
-# import onnxruntime as ort
-# from io import BytesIO
-# from deploy.test_by_onnx import process_image  # Assuming this function is implemented
-
-
-# # Model configuration
-# model_path = r"D:\\PROGRAMMING\\React Js\\DIP\\human-anime-app\\deploy\\AnimeGANv3_Hayao_STYLE_36.onnx"
-# device = "gpu"  # or "cpu"
-
-# def base64_to_cv2(base64_str):
-#     print("entered base64_to_cv2")
-#     img_bytes = base64.b64decode(base64_str)
-#     print("img_bytes:", type(img_bytes), len(img_bytes))
-#     img_array = np.frombuffer(img_bytes, dtype=np.uint8)
-#     print(img_array.shape)
-#     img_array = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
-#     return cv2.imdecode(img_array, cv2.IMREAD_COLOR)
-
-# def cv2_to_base64(cv2_img):
-#     _, buffer = cv2.imencode('.jpg', cv2_img)
-#     return base64.b64encode(buffer).decode('utf-8')
-
-# def Convert_single_image_from_cv2(cv2_img, model_path, device="cpu"):
-#     if ort.get_device() == 'GPU' and device == "gpu":
-#         session = ort.InferenceSession(model_path, providers=['CUDAExecutionProvider','CPUExecutionProvider'])
-#     else:
-#         session = ort.InferenceSession(model_path, providers=['CPUExecutionProvider'])
-
-#     input_name = session.get_inputs()[0].name
-
-#     original_shape = cv2_img.shape[:2][::-1]  # (width, height)
-#     img = process_image(cv2_img, model_path)
-#     img = np.expand_dims(img, axis=0)
-
-#     # Run inference
-#     output = session.run(None, {input_name: img})[0]
-
-#     # Convert output back to image
-#     output_img = (np.squeeze(output) + 1.) / 2 * 255
-#     output_img = np.clip(output_img, 0, 255).astype(np.uint8)
-#     output_img = cv2.resize(output_img, original_shape)
-#     output_img = cv2.cvtColor(output_img, cv2.COLOR_RGB2BGR)
-
-#     return output_img
-
-# # === Main callable ===
-# def base64_to_anime(base64_input_image):
-#     print("entered")
-
-#     input_img_cv2 = base64_to_cv2(base64_input_image)
-#     if input_img_cv2 is None:
-#         raise ValueError("Failed to decode base64 image to OpenCV format.")
-#     else:
-#         print("working input_img_cv2:", input_img_cv2.shape)
-
-#     print("input_img_cv2:", input_img_cv2.shape)
-    
-#     # Decode input base64 to cv2
-#     input_img_cv2 = base64_to_cv2(base64_input_image)
-#     print("input_img_cv2:", input_img_cv2.shape)
-    
-#     # Apply transformation using ONNX model
-#     output_img_cv2 = Convert_single_image_from_cv2(input_img_cv2, model_path, device)
-#     print("output_img_cv2:", output_img_cv2.shape)
-    
-#     # Convert back to base64
-#     output_base64 = cv2_to_base64(output_img_cv2)
-#     print("output_base64:", output_base64)
-
-#     with open("D:\PROGRAMMING\React Js\DIP\human-anime-app\output.jpg", "wb") as f:
-#         f.write(base64.b64decode(output_base64))
-        
-#     return output_base64
-
-
+# ========== Run App ==========
 if __name__ == "__main__":
     app.run()
