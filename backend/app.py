@@ -8,6 +8,7 @@ import sys
 import threading
 import random
 import sys, os
+import time
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -36,8 +37,20 @@ def predict_image():
             return jsonify({"error": "No image provided"}), 400
 
         print("📥 Received image for /predict")
+        # encoded_img = base64_to_anime(base64_img)
+        # return jsonify({"result_image": f"data:image/png;base64,{encoded_img}"})
+
+        start_time = time.time()
         encoded_img = base64_to_anime(base64_img)
-        return jsonify({"result_image": f"data:image/png;base64,{encoded_img}"})
+        end_time = time.time()
+        
+        elapsed = round(end_time - start_time, 3)
+        print(f"🕒 Image processed in {elapsed} seconds")
+        
+        return jsonify({
+            "result_image": f"data:image/png;base64,{encoded_img}",
+            "processing_time": f"{elapsed} seconds"
+        })
 
     except Exception as e:
         print("❌ Error in /predict:", traceback.format_exc(), flush=True)
@@ -79,7 +92,10 @@ def process_video():
         return jsonify({
             "filename": output_filename,
             "video_id": original_filename,
-            "video_url": f"http://localhost:5000/videos/{output_filename}?nocache={random_id}"
+            "video_url": f"http://localhost:5000/videos/{output_filename}?nocache={random_id}",
+            
+            "video_path": output_path  # ✅ full local path
+
         })
 
     except Exception as e:

@@ -25,10 +25,10 @@ const About = () => {
 
         <h3 className="text-xl font-semibold text-blue-300 mt-6 mb-2">Team Members:</h3>
         <div className="space-y-1 text-gray-300 text-center">
-          <p>Somil Doshi – 2380129</p>
+          <p>Somil Doshi</p>
           <p>Yatrikkumar Shah</p>
           <p>Arka Dey</p>
-          <p>Shreya</p>
+          <p>Shreya Telavane</p>
           <p>Kiarah Patel</p>
         </div>
 

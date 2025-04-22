@@ -19,6 +19,9 @@ const VideoPage = () => {
   const intervalRef = useRef(null);
   const videoRef = useRef(null);
 
+  const [videoPath, setVideoPath] = useState(null);
+
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -202,10 +205,10 @@ const VideoPage = () => {
 
           {videoReady && processedVideoUrl && (
             <div className="bg-white/10 p-4 rounded-xl border border-white/20 shadow-md">
-              <h3 className="text-xl font-semibold mb-2">Anime-Styled Output</h3>
+              {/* <h3 className="text-xl font-semibold mb-2">Anime-Styled Output</h3> */}
               
               {/* Embedded video player */}
-              <div className="mb-4">
+              {/* <div className="mb-4">
                 <video 
                   ref={videoRef}
                   controls 
@@ -215,10 +218,23 @@ const VideoPage = () => {
                   <source src={processedVideoUrl} type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
-              </div>
+              </div> */}
+
+              {videoReady && processedVideoUrl && (
+                <div className="bg-white/10 p-4 rounded-xl border border-white/20 shadow-md">
+                  <h3 className="text-xl font-semibold mb-2">Anime-Styled Output</h3>
+              
+                  <div className="bg-gray-800 p-4 rounded-lg text-sm text-blue-300 break-words text-center border border-blue-500">
+                    Output Video Path:
+                    <div className="mt-2 text-white font-mono break-words">{processedVideoUrl}</div>
+                  </div>
+                </div>
+              )}
+
+
               
               {/* Video player controls */}
-              <div className="flex justify-center gap-2 mb-4">
+              {/* <div className="flex justify-center gap-2 mb-4">
                 <button
                   onClick={tryLoadVideo}
                   className="px-3 py-1 bg-blue-500 hover:bg-blue-600 rounded-md text-sm"
@@ -232,10 +248,10 @@ const VideoPage = () => {
                 >
                   Test Video Loading
                 </button>
-              </div>
+              </div> */}
               
               {/* Direct access links */}
-              <div className="flex flex-wrap justify-center gap-2 mt-4">
+              {/* <div className="flex flex-wrap justify-center gap-2 mt-4">
                 <a
                   href={processedVideoUrl}
                   target="_blank"
@@ -256,7 +272,7 @@ const VideoPage = () => {
               
               <div className="mt-4 text-sm text-center text-gray-400">
                 <p>If the video doesn't play, please use "Open in New Tab" or "Download" buttons.</p>
-              </div>
+              </div> */}
             </div>
           )}
         </div>
