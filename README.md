@@ -47,7 +47,7 @@ human-anime-app/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/somildoshi12/human-anime-dip.git
+git clone https://github.com/somildoshi12/AnimeFX.git
 cd human-anime-app
 ```
 
