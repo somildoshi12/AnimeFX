@@ -16,6 +16,7 @@ const VideoPage = () => {
   const [error, setError] = useState(null);
   const [videoReady, setVideoReady] = useState(false);
   const [downloadPath, setDownloadPath] = useState(null);
+  const [selectedFileName, setSelectedFileName] = useState("");
   const intervalRef = useRef(null);
 
   // Cleanup on unmount
@@ -72,6 +73,7 @@ const VideoPage = () => {
       intervalRef.current = null;
     }
     
+    setSelectedFileName(file.name);
     const localURL = URL.createObjectURL(file);
     setOriginalVideo(localURL);
     setVideoId(null);
@@ -138,9 +140,9 @@ const VideoPage = () => {
                 className="hidden"
               />
             </label>
-            {originalVideo && (
+            {selectedFileName && (
               <span className="ml-3 text-gray-300">
-                {videoId || "Video selected"}
+                {selectedFileName}
               </span>
             )}
           </div>
@@ -184,8 +186,8 @@ const VideoPage = () => {
               
               <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center mb-4">
                 <div className="text-center">
-                  <p className="text-gray-400 mb-2">Your anime-styled video is ready!</p>
-                  <p className="text-gray-500 text-sm mb-4">Click the button below to download</p>
+                  <p className="text-gray-300 mb-2">Your anime-styled video is ready!</p>
+                  <p className="text-gray-400 text-sm mb-4">Click the button below to download</p>
                   
                   <a
                     href={getDownloadUrl()}
